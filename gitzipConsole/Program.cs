@@ -18,18 +18,25 @@ foreach (var directory in directories)
 
 async Task GitArchiveDirectory(string directory)
 {
-    var gitArchiveCmd = Cli.Wrap("git")
-        .WithWorkingDirectory(directory)
-        .WithArguments(args => args
-            .Add("archive")
-            .Add("HEAD")
-            .Add("--format=zip")
-            .Add("-o")
-            .Add($"{directory}.zip")
-        );
-    AnsiConsole.MarkupLine($"[yellow]{gitArchiveCmd}[/]");
+    try
+    {
+        var gitArchiveCmd = Cli.Wrap("git")
+            .WithWorkingDirectory(directory)
+            .WithArguments(args => args
+                .Add("archive")
+                .Add("HEAD")
+                .Add("--format=zip")
+                .Add("-o")
+                .Add($"{directory}.zip")
+            );
+        AnsiConsole.MarkupLine($"[yellow]{gitArchiveCmd}[/]");
     
-    await gitArchiveCmd.ExecuteAsync();
+        await gitArchiveCmd.ExecuteAsync();
+    }
+    catch (Exception e)
+    {
+       AnsiConsole.MarkupLine($"[red]{e.Message}[/]");
+    }
 
 }
 
