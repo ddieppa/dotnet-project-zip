@@ -3,28 +3,12 @@ using Spectre.Console;
 
 
 
-//var currDir = AnsiConsole.Ask<string>("Enter [green]directory[/] to list files in:");
-var currDir = $"C:\\servicechannel\\dev";
+var currDir = AnsiConsole.Ask<string>("Enter [green]directory[/] to list files in:");
+
 IEnumerable<string> directoriesToIgnore = new List<string> { "node_modules", "bin", "obj", ".idea" };
 var childDirectories = Directory.GetDirectories(currDir);
 var directories = childDirectories.Where(x => !directoriesToIgnore.Any(x.Contains));
 
-// // Progress
-// await AnsiConsole.Progress()
-//     .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new SpinnerColumn())
-//     .StartAsync(async ctx =>
-//     {
-//         await Task.WhenAll(directories.Select(async directoryName =>
-//         {
-//             var task = ctx.AddTask(directoryName, new ProgressTaskSettings
-//             {
-//                 AutoStart = false
-//             });
-//
-//             await GitArchiveDirectory(task, directoryName);
-//         }));
-//     });
-// AnsiConsole.MarkupLine("Done!");
 
 var table = new Table().Expand().BorderColor(Color.Grey);
 table.AddColumn("[yellow]Directory[/]");
