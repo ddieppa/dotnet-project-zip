@@ -9,29 +9,51 @@ IEnumerable<string> directoriesToIgnore = new List<string> { "node_modules", "bi
 var childDirectories = Directory.GetDirectories(currDir);
 var directories = childDirectories.Where(x => !directoriesToIgnore.Any(x.Contains));
 
-// Progress
-await AnsiConsole.Progress()
-    .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new SpinnerColumn())
+// // Progress
+// await AnsiConsole.Progress()
+//     .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new SpinnerColumn())
+//     .StartAsync(async ctx =>
+//     {
+//         await Task.WhenAll(directories.Select(async directoryName =>
+//         {
+//             var task = ctx.AddTask(directoryName, new ProgressTaskSettings
+//             {
+//                 AutoStart = false
+//             });
+//
+//             await GitArchiveDirectory(task, directoryName);
+//         }));
+//     });
+// AnsiConsole.MarkupLine("Done!");
+
+var table = new Table().Expand().BorderColor(Color.Grey);
+table.AddColumn("[yellow]Directory[/]");
+table.AddColumn("[green]Success[/]");
+table.AddColumn("[red]Fail[/]");
+
+AnsiConsole.MarkupLine("Press [yellow]CTRL+C[/] to exit");
+
+await AnsiConsole.Live(table)
+    .AutoClear(false)
+    .Overflow(VerticalOverflow.Ellipsis)
+    .Cropping(VerticalOverflowCropping.Bottom)
     .StartAsync(async ctx =>
     {
-        await Task.WhenAll(directories.Select(async directoryName =>
+        
+        foreach (var directory in directories)
         {
-            var task = ctx.AddTask(directoryName, new ProgressTaskSettings
-            {
-                AutoStart = false
-            });
 
-            await GitArchiveDirectory(task, directoryName);
-        }));
+            await GitArchiveDirectory(directory, table, ctx);
+            
+        }
     });
-AnsiConsole.MarkupLine("Done!");
 
 
-async Task GitArchiveDirectory(ProgressTask task, string directory)
+
+async Task GitArchiveDirectory(string directory, Table table, LiveDisplayContext ctx)
 {
     try
     {
-        task.StartTask();
         var gitArchiveCmd = Cli.Wrap("git")
             .WithWorkingDirectory(directory)
             .WithValidation(CommandResultValidation.None)
@@ -42,19 +64,23 @@ async Task GitArchiveDirectory(ProgressTask task, string directory)
                 .Add("-o")
                 .Add($"{directory}.zip")
             );
-        await gitArchiveCmd.ExecuteAsync();
-        AnsiConsole.MarkupLine($"[green]Archived[/] {directory}");
+        var result = await gitArchiveCmd.ExecuteAsync();
+        if (result.ExitCode != 0)
+        {
+            table.AddRow(directory, "", "X");
+        }
+        else
+        {
+            table.AddRow(directory, "X", "");
+        }
+        ctx.Refresh();
+        
         
     }
     catch (Exception e)
     {
-       AnsiConsole.MarkupLine($"[red]Error: {e.Message}[/]");
+        table.AddRow(directory, "", "X");
     }
 
-}
-
-void WriteLogMessage(string message)
-{
-    AnsiConsole.MarkupLine($"[grey]LOG:[/] {message}[grey]...[/]");
 }
 
